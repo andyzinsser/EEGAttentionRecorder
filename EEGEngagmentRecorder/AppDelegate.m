@@ -7,6 +7,8 @@
 //
 
 #import "AppDelegate.h"
+#import "TGAccessoryManager.h"
+
 
 @implementation AppDelegate
 
@@ -18,6 +20,11 @@
         UINavigationController *navigationController = [splitViewController.viewControllers lastObject];
         splitViewController.delegate = (id)navigationController.topViewController;
     }
+    
+    NSUserDefaults * defaults = [NSUserDefaults standardUserDefaults];
+    TGAccessoryType accessoryType = (TGAccessoryType)[defaults integerForKey:@"accessory_type_preference"];
+    [[TGAccessoryManager sharedTGAccessoryManager] setupManagerWithInterval:0.2 forAccessoryType:accessoryType];
+    
     return YES;
 }
 							
@@ -45,7 +52,7 @@
 
 - (void)applicationWillTerminate:(UIApplication *)application
 {
-    // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
+    [[TGAccessoryManager sharedTGAccessoryManager] teardownManager];
 }
 
 @end

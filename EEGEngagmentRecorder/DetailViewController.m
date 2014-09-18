@@ -7,8 +7,11 @@
 //
 
 #import "DetailViewController.h"
+#import "EEGDataViewController.h"
+
 
 @interface DetailViewController ()
+
 @property (strong, nonatomic) UIPopoverController *masterPopoverController;
 - (void)configureView;
 @end
@@ -21,8 +24,6 @@
 {
     if (_detailItem != newDetailItem) {
         _detailItem = newDetailItem;
-        
-        // Update the view.
         [self configureView];
     }
 
@@ -33,17 +34,34 @@
 
 - (void)configureView
 {
-    // Update the user interface for the detail item.
-
-    if (self.detailItem) {
-        self.detailDescriptionLabel.text = [self.detailItem description];
+    if ( self.dataController == nil ) {
+        self.dataController = [[EEGDataViewController alloc] init];
+        self.dataController.delegate = self;
     }
+    
+    if (self.detailItem) {
+        self.detailDescriptionLabel.text = @"Attention Data";
+        self.recordButton = [UIButton buttonWithType:UIButtonTypeSystem];
+        [self.recordButton setTitle:@"Record" forState:UIControlStateNormal];
+        [self.recordButton addTarget:self action:@selector(recordButtonClicked:) forControlEvents:UIControlEventTouchUpInside];
+        [self.view addSubview:self.recordButton];
+        [self.recordButton sizeToFit];
+        self.recordButton.center = self.view.center;
+        CGRect frame = self.recordButton.frame;
+        frame.origin.y = self.view.frame.size.height - self.recordButton.frame.size.height - 20.0;
+        self.recordButton.frame = frame;
+        self.isRecording = NO;
+    }
+
+    [[TGAccessoryManager sharedTGAccessoryManager] setDelegate:self.dataController];
+    
+    self.recordButton.enabled = self.dataController.accessoryConnected;
 }
+
 
 - (void)viewDidLoad
 {
     [super viewDidLoad];
-	// Do any additional setup after loading the view, typically from a nib.
     [self configureView];
 }
 
@@ -51,6 +69,40 @@
 {
     [super didReceiveMemoryWarning];
     // Dispose of any resources that can be recreated.
+}
+
+# pragma mark Click Handlers
+
+- (void)recordButtonClicked:(id)sender
+{
+    if ( self.isRecording ) {
+        [self.dataController stopRecordingData];
+        [self.recordButton setTitle:@"Record" forState:UIControlStateNormal];
+        self.isRecording = NO;
+    } else {
+        [self.dataController startRecordingData];
+        [self.recordButton setTitle:@"Stop" forState:UIControlStateNormal];
+        self.isRecording = YES;
+    }
+}
+
+
+#pragma  EEGDataDelegate methods
+
+- (void)receiveAttentionData:(int)attentionData
+{
+    NSLog(@"attention data: %d", attentionData);
+    self.detailDescriptionLabel.text = [NSString stringWithFormat:@"%d", attentionData];
+}
+
+- (void)deviceConnected
+{
+    self.recordButton.enabled = YES;
+}
+
+- (void)deviceDisconnected
+{
+    self.recordButton.enabled = NO;
 }
 
 #pragma mark - Split view
